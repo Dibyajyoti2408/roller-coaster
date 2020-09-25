@@ -1,0 +1,241 @@
+
+#20.
+SELECT c.CategoryName,COUNT(p.ProductName) AS TotalProducts FROM Categories AS c
+  LEFT JOIN Products AS p
+  ON c.CategoryID = p.CategoryID
+  GROUP BY c.CategoryName;
+OR,
+SELECT c.CategoryName,COUNT(p.ProductName) AS TotalProducts FROM Categories AS c
+  INNER JOIN Products AS p
+  ON c.CategoryID = p.CategoryID
+  GROUP BY c.CategoryName;
+
+#21.
+SELECT Country,City,COUNT(CustomerID) AS TotalCustomer FROM Customers
+  GROUP BY Country,City;
+
+#22.
+SELECT ProductID,ProductName,UnitsInStock,ReorderLevel FROM Products
+  WHERE UnitsInStock < ReorderLevel;
+
+#23.
+SELECT ProductID,ProductName,UnitsInStock,UnitsOnOrder,ReorderLevel,Discontinued FROM Products
+  WHERE (UnitsInStock+UnitsOnOrder) <= ReorderLevel
+    AND Discontinued = 0;
+
+#24.
+NEED TO CHECK.
+
+#25.
+SELECT TOP 3 ShipCountry,AVG(Freight) AS AverageFreight FROM Orders
+  GROUP BY ShipCountry
+  ORDER BY AverageFreight DESC;
+
+#26.
+SELECT TOP 3 ShipCountry,AVG(Freight) AS AverageFreight FROM Orders
+  WHERE OrderDate = '1998'
+  GROUP BY ShipCountry
+  ORDER BY AverageFreight DESC; <Check>
+
+#27.
+
+#29.
+SELECT e.EmployeeID,e.LastName,o.OrderID,ProductName,od.Quantity FROM Employees AS e
+  INNER JOIN Orders AS o ON e.EmployeeID = o.EmployeeID
+  INNER JOIN [Order Details] AS od ON o.OrderID = od.OrderID
+  INNER JOIN Products AS p ON od.ProductID = p.ProductID;
+
+#30.
+SELECT c.CustomerID AS Customers_CustomerID,o.CustomerID AS Orders_CustomerID FROM Customers AS c
+  LEFT JOIN Orders AS o ON c.CustomerID = o.CustomerID
+  WHERE o.CustomerID IS NULL;
+
+#31.
+SELECT c.CustomerID,o.CustomerID FROM Customers AS c
+  LEFT JOIN Orders AS o ON o.CustomerID = c.CustomerID
+  WHERE o.EmployeeID = 4 AND o.CustomerID IS NULL;
+<check>
+
+#32.
+By Dibya independently - 
+SELECT c.CustomerID,c.CompanyName,o.OrderID,o.OrderDate,SUM(od.UnitPrice) AS TotalOrderAmount
+  FROM Customers AS c
+  LEFT JOIN Orders AS o ON c.CustomerID = o.CustomerID
+  LEFT JOIN [Order Details] AS od ON o.OrderID = od.OrderID
+  WHERE year(o.OrderDate) = '1997'
+  GROUP BY c.CustomerID,c.CompanyName,o.OrderID,o.OrderDate
+  HAVING SUM(od.UnitPrice)>= 100;
+
+By Dibya Using Solution –
+SELECT c.CustomerID,c.CompanyName,o.OrderID,TotalOrderAmount = SUM(od.Quantity * od.UnitPrice)
+  FROM Customers AS c
+  LEFT JOIN Orders AS o ON c.CustomerID = o.CustomerID
+  LEFT JOIN [Order Details] AS od ON o.OrderID = od.OrderID
+  WHERE year(o.OrderDate) = '1998'
+  GROUP BY c.CustomerID,c.CompanyName,o.OrderID
+  HAVING SUM(od.Quantity * od.UnitPrice)>= 10000;
+
+#33.
+SELECT c.CustomerID,c.CompanyName,TotalOrderAmount = SUM(od.Quantity * od.UnitPrice)
+  FROM Customers AS c
+  LEFT JOIN Orders AS o ON c.CustomerID = o.CustomerID
+  LEFT JOIN [Order Details] AS od ON o.OrderID = od.OrderID
+  WHERE year(o.OrderDate) = '1998'
+  GROUP BY c.CustomerID,c.CompanyName
+  HAVING SUM(od.Quantity * od.UnitPrice)>= 15000;
+
+#34.
+Dibya has a concern 
+SELECT c.CustomerID,c.CompanyName,TotalsWithoutDiscount = SUM(od.Quantity * od.UnitPrice),TotalsWithDiscount = SUM(od.Quantity * (od.UnitPrice*(1-od.Discount)))    
+  FROM Customers AS c
+  LEFT JOIN Orders AS o ON c.CustomerID = o.CustomerID
+  LEFT JOIN [Order Details] AS od ON o.OrderID = od.OrderID
+  WHERE year(o.OrderDate) = '1998'
+  GROUP BY c.CustomerID,c.CompanyName
+  ORDER BY TotalsWithDiscount DESC
+  --HAVING SUM(od.Quantity * (od.UnitPrice*(1-od.Discount)))>= 10000;
+
+#35.
+SELECT EmployeeID,OrderID,OrderDate FROM Orders
+  WHERE OrderDate = EOMONTH(OrderDate)
+  ORDER BY EmployeeID;
+#36.
+
+#37.
+
+#38.
+SELECT OrderID FROM [Order Details]
+  WHERE Quantity >= 60 
+  GROUP BY OrderID,Quantity
+  HAVING COUNT(OrderID) > 1;
+
+#39.
+SELECT OrderID,ProductID,UnitPrice,Quantity,Discount FROM [Order Details]
+  WHERE OrderID IN ( SELECT OrderID FROM [Order Details]
+  WHERE Quantity >= 60 
+  GROUP BY OrderID,Quantity
+  HAVING COUNT(OrderID) > 1);
+
+#40.
+
+#41.
+SELECT OrderID,CONVERT(DATE,OrderDate) AS OrderDate,CONVERT(DATE,RequiredDate) AS RequiredDate,CONVERT(DATE,ShippedDate) AS ShippedDate FROM Orders
+  WHERE ShippedDate > RequiredDate;
+
+#42.
+SELECT o.EmployeeID,e.LastName,COUNT(o.EmployeeID) AS TotalLateOrders FROM Orders AS o
+  LEFT JOIN Employees AS e ON o.EmployeeID = e.EmployeeID
+  WHERE o.ShippedDate > o.RequiredDate
+  GROUP BY o.EmployeeID, e.LastName
+  ORDER BY TotalLateOrders DESC;
+
+#43.
+SELECT no.EmployeeID,no.LastName,ne.AllOrders,no.TotalLateOrders 
+  FROM (SELECT o.EmployeeID,e.LastName,COUNT(o.EmployeeID) AS TotalLateOrders FROM    Orders AS o
+  LEFT JOIN Employees AS e ON o.EmployeeID = e.EmployeeID
+  WHERE o.ShippedDate > o.RequiredDate
+  GROUP BY o.EmployeeID, e.LastName) AS no
+  LEFT JOIN (SELECT o.EmployeeID,e.LastName,COUNT(o.OrderID) AS AllOrders FROM Orders AS o
+  LEFT JOIN Employees AS e ON o.EmployeeID = e.EmployeeID
+  GROUP BY o.EmployeeID,e.LastName) AS ne ON no.EmployeeID = ne.EmployeeID
+  ORDER BY no.EmployeeID;
+
+#44. & #45.
+NOT POSSIBLE TO DO IN MY DATASET
+
+#46.
+SELECT no.EmployeeID,no.LastName,ne.AllOrders,no.TotalLateOrders,
+  (no.TotalLateOrders/(ne.AllOrders*1.0)) AS PercentLateOrders
+  FROM (SELECT o.EmployeeID,e.LastName,COUNT(o.EmployeeID) AS TotalLateOrders FROM Orders AS o
+  INNER JOIN Employees AS e ON o.EmployeeID = e.EmployeeID
+  WHERE o.ShippedDate > o.RequiredDate
+  GROUP BY o.EmployeeID, e.LastName) AS no
+  INNER JOIN (SELECT o.EmployeeID,e.LastName,COUNT(o.OrderID) AS AllOrders FROM Orders AS o
+  INNER JOIN Employees AS e ON o.EmployeeID = e.EmployeeID
+  GROUP BY o.EmployeeID,e.LastName) AS ne ON no.EmployeeID = ne.EmployeeID
+  ORDER BY no.EmployeeID;
+
+#47.
+SELECT no.EmployeeID,no.LastName,ne.AllOrders,no.TotalLateOrders,
+  ROUND((no.TotalLateOrders/(ne.AllOrders*1.0)),2) AS PercentLateOrders
+  FROM (SELECT o.EmployeeID,e.LastName,COUNT(o.EmployeeID) AS TotalLateOrders FROM Orders AS o
+  INNER JOIN Employees AS e ON o.EmployeeID = e.EmployeeID
+  WHERE o.ShippedDate > o.RequiredDate
+  GROUP BY o.EmployeeID, e.LastName) AS no
+  INNER JOIN (SELECT o.EmployeeID,e.LastName,COUNT(o.OrderID) AS AllOrders FROM Orders AS o
+  INNER JOIN Employees AS e ON o.EmployeeID = e.EmployeeID
+  GROUP BY o.EmployeeID,e.LastName) AS ne ON no.EmployeeID = ne.EmployeeID
+  ORDER BY no.EmployeeID;
+<CHECK>
+
+#48
+Solved by Dibya independently -
+SELECT c.CustomerID,c.CompanyName,SUM(od.Quantity * od.UnitPrice) AS TotalOrderAmount,
+  (CASE 
+   WHEN SUM(od.Quantity * od.UnitPrice) BETWEEN 0 AND 1000 THEN 'Low'
+   WHEN SUM(od.Quantity * od.UnitPrice) BETWEEN 1001 AND 5000 THEN 'Medium'
+   WHEN SUM(od.Quantity * od.UnitPrice) BETWEEN 5001 AND 10000 THEN 'High'
+   ELSE 'Very High'
+   END)  AS CustomerGroup FROM Customers AS c
+  LEFT JOIN Orders AS o ON c.CustomerID = o.CustomerID
+  LEFT JOIN [Order Details] AS od ON o.OrderID = od.OrderID 
+  WHERE YEAR(o.OrderDate) = '1998'
+  GROUP BY c.CustomerID,c.CompanyName
+  ORDER BY c.CustomerID,c.CompanyName;
+Solved by Dibya using the hint –
+SELECT c.CustomerID,c.CompanyName,SUM(od.Quantity * od.UnitPrice) AS TotalOrderAmount,
+  (CASE 
+   WHEN SUM(od.Quantity * od.UnitPrice) >= 0 AND SUM(od.Quantity * od.UnitPrice) < 1000 THEN 'Low'
+   WHEN SUM(od.Quantity * od.UnitPrice) >= 1000 AND SUM(od.Quantity * od.UnitPrice) < 5000 THEN 'Medium'
+   WHEN SUM(od.Quantity * od.UnitPrice) >= 5000 AND SUM(od.Quantity * od.UnitPrice) < 10000 THEN 'High'
+   ELSE 'Very High'
+   END)  AS CustomerGroup FROM Customers AS c
+  LEFT JOIN Orders AS o ON c.CustomerID = o.CustomerID
+  LEFT JOIN [Order Details] AS od ON o.OrderID = od.OrderID 
+  WHERE YEAR(o.OrderDate) = '1998'
+  GROUP BY c.CustomerID,c.CompanyName
+  ORDER BY c.CustomerID,c.CompanyName
+  ;
+
+#49.
+Not Applicable
+
+
+
+
+#50.
+SELECT CustomerGroup,COUNT(*) AS TotalInGroup,
+   COUNT(*)/81.0 AS PercentageInGroup FROM (SELECT
+  (CASE 
+   WHEN SUM(od.Quantity * od.UnitPrice) >= 0 AND SUM(od.Quantity * od.UnitPrice) < 1000 THEN 'Low'
+   WHEN SUM(od.Quantity * od.UnitPrice) >= 1000 AND SUM(od.Quantity * od.UnitPrice) < 5000 THEN 'Medium'
+   WHEN SUM(od.Quantity * od.UnitPrice) >= 5000 AND SUM(od.Quantity * od.UnitPrice) < 10000 THEN 'High'
+   ELSE 'Very High'
+   END)  AS CustomerGroup FROM Customers AS c
+  LEFT JOIN Orders AS o ON c.CustomerID = o.CustomerID
+  LEFT JOIN [Order Details] AS od ON o.OrderID = od.OrderID 
+  WHERE YEAR(o.OrderDate) = '1998'
+  GROUP BY c.CustomerID,c.CompanyName
+  ) AS base
+  GROUP BY CustomerGroup;
+
+#51.
+Could not find a required table so far.
+
+#52.
+SELECT Country FROM Customers
+UNION 
+SELECT Country FROM Suppliers;
+
+#53.
+SELECT DISTINCT s.Country AS SupplierCountry,c.Country AS CustomerCountry FROM Suppliers AS s
+FULL OUTER JOIN Customers AS c ON s.Country=c.Country
+ORDER BY SupplierCountry,CustomerCountry;
+<Overall Results Matched>
+#54.
+
+
+
+
+
+
